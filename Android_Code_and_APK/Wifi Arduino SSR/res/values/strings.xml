@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Wifi Arduino SSR</string>
+    <string name="action_settings">Settings</string>
+    <string name="fwd">FORWARD</string>
+    <string name="bck">REVERSE</string>
+    <string name="stop">STOP</string>
+    <string name="left">LEFT</string>
+    <string name="right">RIGHT</string>
+    <string name="ip">192.168.4.1</string>
+    <string name="port">80</string>
+    <string name="connect">Connect</string>
+    <string name="iplab">IP:</string>
+     <string name="portlab">PORT:</string>
+     <string name="off">OFF</string>
+     <string name="about">About Us</string>
+     <string name="speak">Speak</string>
+     <string name="status">STATUS</string>
+
+</resources>

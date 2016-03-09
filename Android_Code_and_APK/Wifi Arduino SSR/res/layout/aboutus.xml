@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/ScrollView01"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+
+        <LinearLayout 
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal" 
+          >
+            
+         <TextView android:id="@+id/title_right_text"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:maxLines="8"
+        android:text="
+        Armtronix \r\n
+        1A, Ankush Arcade,\r\n
+        2nd Floor Station Road \r\n
+        Hubli – 580020\r\n
+        Web:http://armtronix.net\r\n
+        Email: info@armtronix.net\r\n
+        Tel: +91 9620165837\r\n
+        Tel: +918362265837 "></TextView>
+        
+  </LinearLayout>
+</ScrollView>

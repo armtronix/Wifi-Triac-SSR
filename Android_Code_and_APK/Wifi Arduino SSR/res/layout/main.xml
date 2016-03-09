@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <EditText
+        android:id="@+id/EditText01"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+         >
+    </EditText>
+
+            <Button
+               android:id="@+id/myButton"
+               android:layout_width="match_parent"
+               android:layout_height="wrap_content"
+               android:layout_alignRight="@+id/EditText01"
+               android:layout_below="@+id/EditText01"
+               android:onClick="onClick"
+               android:text="SEND TEXT" >
+            </Button>
+    
+             <ImageButton
+                android:id="@+id/button_speak"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_alignLeft="@+id/myButton"
+                android:layout_below="@+id/myButton"
+                android:layout_marginLeft="54dp"
+                android:layout_marginTop="28dp" 
+                android:text="@string/speak" 
+                android:src="@drawable/speak"/>
+             
+             <ToggleButton
+                android:id="@+id/onoffbutton"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_alignRight="@+id/myButton"
+                android:layout_below="@+id/myButton"
+                android:layout_marginRight="54dp"
+                android:layout_marginTop="28dp" 
+                android:textOn=""
+                android:textOff=""
+                android:background="@drawable/btn_style" />
+			  <ToggleButton
+                android:id="@+id/sensorbutton"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_alignRight="@+id/myButton"
+                android:layout_below="@+id/myButton"
+                android:layout_marginRight="54dp"
+                android:layout_marginTop="156dp" 
+                android:textOn=""
+                android:textOff=""
+                android:background="@drawable/sensorbtn_style" />
+			   <ImageButton
+                android:id="@+id/button_status"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_alignLeft="@+id/myButton"
+                android:layout_below="@+id/myButton"
+                android:layout_marginLeft="54dp"
+                android:layout_marginTop="156dp" 
+                android:text="@string/status" 
+                android:src="@drawable/status"/>
+			<SeekBar
+       		    android:id="@+id/seekBar1"
+                android:layout_width="300dp"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="40dp"
+                android:layout_alignLeft="@+id/myButton"
+                android:layout_below="@+id/myButton"
+                android:layout_marginTop="350dp" 
+                android:max="12"/>
+			 <EditText
+                android:id="@+id/Textget"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignRight="@+id/myButton"
+                android:layout_below="@+id/myButton"
+                android:layout_marginRight="0dp"
+                android:layout_marginTop="300dp" >
+             </EditText>
+
+</RelativeLayout>
