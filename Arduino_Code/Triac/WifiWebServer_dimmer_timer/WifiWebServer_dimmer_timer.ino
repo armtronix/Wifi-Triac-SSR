@@ -6,8 +6,8 @@
 #include <ESP8266mDNS.h>
 #include <Arduino.h>
 
-const char *ssid = "ggg";
-const char *password = "ggg";
+const char *ssid = "Your SSID";
+const char *password = "Your Passwrd";
 
 ESP8266WebServer server ( 80 );
 
@@ -15,6 +15,7 @@ volatile int i=0;
 volatile int dimming =0;  
 volatile boolean zero_cross=0;
 int AC_LOAD = 13;    // Output to Opto Triac pin
+int AC_LOAD_SSR = 14;    // Output to SSR pin
 int AC_ZERO_CROSS = 12;    // Output to Opto Triac pin   
 
 int freqStep = 375;//75*5 as prescalar is 16 for 80MHZ
@@ -48,7 +49,7 @@ void handleNotFound() {
 
 void setup ( void ) {
   
-  pinMode(BUILTIN_LED, OUTPUT);
+  pinMode(AC_LOAD_SSR, OUTPUT);
   pinMode(AC_ZERO_CROSS, INPUT);
   pinMode(AC_LOAD, OUTPUT);
   Serial.begin ( 115200 );
@@ -143,7 +144,7 @@ void webHandleGpio(){
     }
      if (server.arg("state_led")=="1" || server.arg("state_led")=="0" ) {
       int state_led = server.arg("state_led").toInt();
-      digitalWrite(BUILTIN_LED, state_led);
+      digitalWrite(AC_LOAD_SSR, state_led);
       Serial.print("Light switched via web request to  ");      
       Serial.println(state_led);      
     }
@@ -171,21 +172,29 @@ void webHandleGpio(){
       }   
     }
      
-    s = "Light is now ";
-    s += (digitalRead(AC_LOAD))?"on":"off";
+    s = "TRIAC is now ";
+    s += (digitalRead(AC_LOAD))?"ON":"OFF";
     s += "<p>Change to <form action='gpio'><input type='radio' name='state_sw' value='1' ";
     s += (digitalRead(AC_LOAD))?"checked":"";
-    s += ">LIGHT_On<input type='radio' name='state_sw' value='0' ";
+    s += ">TRIAC_ON<input type='radio' name='state_sw' value='0' ";
     s += (digitalRead(AC_LOAD))?"":"checked";
-    s += ">LIGHT_Off <input type='submit' value='Submit'></form></p>";   
+    s += ">TRIAC_OFF <input type='submit' value='Submit'></form></p>";  
 
-    s += "LED is now ";
-    s += (digitalRead(BUILTIN_LED))?"ON":"OFF";
+    s += "SSR is now ";
+    s += (digitalRead(AC_LOAD_SSR))?"ON":"OFF";
     s += "<p>Change to <form action='gpio'><input type='radio' name='state_led' value='1' ";
-    s += (digitalRead(BUILTIN_LED))?"checked":"";
-    s += ">LED_ON <input type='radio' name='state_led' value='0' ";
-    s += (digitalRead(BUILTIN_LED))?"":"checked";
-    s += ">LED_OFF <input type='submit' value='Submit'></form></p>"; 
+    s += (digitalRead(AC_LOAD_SSR))?"checked":"";
+    s += ">SSR_ON <input type='radio' name='state_led' value='0' ";
+    s += (digitalRead(AC_LOAD_SSR))?"":"checked";
+    s += ">SSR_OFF <input type='submit' value='Submit'></form></p>"; 
+
+//    s += "LED is now ";/// enable for onboard led
+//    s += (digitalRead(BUILTIN_LED))?"ON":"OFF";
+//    s += "<p>Change to <form action='gpio'><input type='radio' name='state_led' value='1' ";
+//    s += (digitalRead(BUILTIN_LED))?"checked":"";
+//    s += ">LED_ON <input type='radio' name='state_led' value='0' ";
+//    s += (digitalRead(BUILTIN_LED))?"":"checked";
+//    s += ">LED_OFF <input type='submit' value='Submit'></form></p>"; 
     
     s += "<p>Change to <form name='state' action='gpio' method='get' autocomplete='on' ><input type='range' name='state_dimmer' id='dimInputId' min='0' max='90' step='10' value='0' oninput='showValue()'>" ; 
     s += "<output name='dimOutputName' id='dimOutputId'>0</output></form></p>";
@@ -197,6 +206,17 @@ void webHandleGpio(){
     s += "   document.state.dimOutputId.value = document.state.dimInputId.value;";
     s += "   document.forms['state'].submit(); }";// document.forms['state'].submit(); 
     s += "</script>";
+
+//    s += "<p>Change to <form name='state' action='gpio' method='get' autocomplete='on' ><input type='range' name='state_dimmer' id='dimInputId' min='0' max='90' step='10' value='0' oninput='showValue()'>" ; 
+//    s += "<output name='dimOutputName' id='dimOutputId'>0</output></form></p>";
+//    //s += "<input type='submit' value='Submit'></form></p>";//<span id='range'>0</span>
+//    s += "<script type='text/javascript'>";
+//    s += "function showValue()";//newValue
+//    s += "{";
+//    s += "   ";//document.getElementById('range').innerHTML=newValue;
+//    s += "   document.state.dimOutputId.value = document.state.dimInputId.value;";
+//    s += "   document.forms['state'].submit(); }";// document.forms['state'].submit(); 
+//    s += "</script>";
     server.send(200, "text/html", s);
         
 
