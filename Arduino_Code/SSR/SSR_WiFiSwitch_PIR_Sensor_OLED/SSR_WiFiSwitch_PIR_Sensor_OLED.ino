@@ -40,6 +40,7 @@
 
 
 #include <ESP8266WiFi.h>
+#include <Wire.h>
 #include <ESP8266mDNS.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
@@ -88,6 +89,8 @@ String st; //WiFi Stations HTML list
 String state; //State of light
 char buf[40]; //For MQTT data recieve
 char* host; //The DNS hostname
+
+
 //To be read from Config file
 String esid = "";
 String epass = "";
@@ -95,7 +98,7 @@ String pubTopic;
 String subTopic;
 String mqttServer = "";
 const char* otaServerIndex = "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
-
+char IPcharBuf[15];
 //-------------- void's -------------------------------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
@@ -108,6 +111,15 @@ void setup() {
   digitalWrite(OUTLED, HIGH);
   //attachInterrupt(PIR_INPIN, pir_sensor_int, CHANGE);//add if pir connected
   btn_timer.attach(0.05, btn_handle);
+  //OLED
+  Wire.pins(5, 4); //on ESP-01.
+  Wire.begin();
+  StartUp_OLED(); // Init Oled and fire up!
+  clear_display();
+  sendStrXY(" ARMTRONIX  ", 0, 1); // 16 Character max per line with font set
+  sendStrXY("WIFI SSRD BOARD", 2, 1);
+  sendStrXY("START-UP ....  ", 4, 1);
+  delay(400);
   Debugln("DEBUG: Entering loadConfig()");
   if (!SPIFFS.begin()) {
     Serial.println("Failed to mount file system");
@@ -135,6 +147,7 @@ void setup() {
   Debug("otaFlag:");
   Debugln(otaFlag);
   Debugln("DEBUG: Starting the main loop");
+  clear_display();
 }
 
 void pir_sensor_int()  // function to be fired at the zero crossing to dim the light
@@ -145,7 +158,8 @@ void pir_sensor_int()  // function to be fired at the zero crossing to dim the l
     digitalWrite(OUTLED, HIGH);
     digitalWrite(OUTPIN, HIGH);
     state="1";
-
+    clear_display();
+    sendStrXY("SENSOR HIGH", 4, 1);
     toPub = 1;
 
   }
@@ -155,7 +169,8 @@ void pir_sensor_int()  // function to be fired at the zero crossing to dim the l
     digitalWrite(OUTLED, LOW);
     digitalWrite(OUTPIN, LOW);
     state="0";
- 
+    clear_display();
+    sendStrXY("SENSOR LOW", 4, 1);
     toPub = 1;
     
   }
@@ -226,8 +241,26 @@ void loop() {
     //Debugln("DEBUG: loop() wifi connected & webServer ");
     if (iotMode == 0 || webtypeGlob == 1) {
       //Debugln("DEBUG: loop() Web mode requesthandling ");
+     // clear_display();
+      
       server.handleClient();
       delay(1);
+      if(esid != "" && WiFi.status() != WL_CONNECTED) //wifi reconnect part
+      {
+        sendStrXY("   HOTSPOT MODE  ", 2, 1);
+        Scan_Wifi_Networks();
+      }
+      else if(esid == "" && WiFi.status() != WL_CONNECTED)
+      {
+        sendStrXY("   HOTSPOT MODE  ", 2, 1);
+        
+      }
+      else
+      {
+       sendStrXY("   HTTP MODE", 2, 1);
+       sendStrXY(IPcharBuf, 4, 1);
+       
+      }
     } else if (iotMode == 1 && webtypeGlob != 1 && otaFlag != 1) {
       //Debugln("DEBUG: loop() MQTT mode requesthandling ");
       if (!connectMQTT()) {
@@ -235,6 +268,8 @@ void loop() {
       }
       if (mqttClient.connected()) {
         //Debugln("mqtt handler");
+        
+        sendStrXY("   MQTT MODE ", 2, 1);
         mqtt_handler();
       } else {
         Debugln("mqtt Not connected!");

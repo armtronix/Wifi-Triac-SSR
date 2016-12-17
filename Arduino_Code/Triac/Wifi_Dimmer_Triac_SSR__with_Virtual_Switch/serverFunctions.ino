@@ -159,6 +159,7 @@ void launchWeb(int webtype) {
             server.on("/", webHandleRoot);  
             server.on("/cleareeprom", webHandleClearRom);
             server.on("/gpio", webHandleGpio);
+            server.on("/xml",handleXML);
           }
           //server.onNotFound(webHandleRoot);
           server.begin();
@@ -284,19 +285,20 @@ void webHandleGpio(){
   String s;
    // Set GPIO according to the request
     if (server.arg("state_sw")=="1" || server.arg("state_sw")=="0" ) {
-      int state_sw = server.arg("state_sw").toInt();
+      state_13  = server.arg("state_sw").toInt();
+      state_dimmer_mode  = 0;
       detachInterrupt(AC_ZERO_CROSS);
       delay(7);//to solve on off bug solved 
-      digitalWrite(OUTPIN_TRIAC, state_sw);
+      //digitalWrite(OUTPIN_TRIAC, state_sw);
      
       Serial.print("Light switched via web request to  ");      
-      Serial.println(state_sw);      
+      Serial.println(state_13);      
     }
      if (server.arg("state_led")=="1" || server.arg("state_led")=="0" ) {
-      int state_led = server.arg("state_led").toInt();
-      digitalWrite(OUTPIN_SSR, state_led);
+      state_14 = server.arg("state_led").toInt();
+      //digitalWrite(OUTPIN_SSR, state_led);
       Serial.print("Light switched via web request to  ");      
-      Serial.println(state_led);      
+      Serial.println(state_14);      
     }
    if (server.arg("state_dimmer") !="") {
       int state_dimmer = server.arg("state_dimmer").toInt();
@@ -307,18 +309,23 @@ void webHandleGpio(){
       delay(5); 
       if(dimming>=120)
       {
+      state_dimmer_mode  = 0;
       detachInterrupt(AC_ZERO_CROSS);
       delay(7);//to solve on off bug solved 
-      digitalWrite(OUTPIN_TRIAC, LOW);
+      state_13=0;
+      //digitalWrite(OUTPIN_TRIAC, LOW);
       }
       else if(dimming<=10)
       {
+      state_dimmer_mode  = 0;
       detachInterrupt(AC_ZERO_CROSS);
       delay(7);//to solve on off bug solved 
-      digitalWrite(OUTPIN_TRIAC, HIGH);
+      state_13=1;
+      //digitalWrite(OUTPIN_TRIAC, HIGH);
       }
       else
       {
+      state_dimmer_mode  = 1;
       attachInterrupt(AC_ZERO_CROSS, zero_crosss_int, RISING); 
       }   
     }
@@ -357,7 +364,68 @@ void webHandleGpio(){
         
 }
 
+void buildJavascript(){
+  javaScript="<SCRIPT>\n";
+  javaScript+="var xmlHttp=createXmlHttpObject();\n";
 
+  javaScript+="function createXmlHttpObject(){\n";
+  javaScript+=" if(window.XMLHttpRequest){\n";
+  javaScript+="    xmlHttp=new XMLHttpRequest();\n";
+  javaScript+=" }else{\n";
+  javaScript+="    xmlHttp=new ActiveXObject('Microsoft.XMLHTTP');\n";
+  javaScript+=" }\n";
+  javaScript+=" return xmlHttp;\n";
+  javaScript+="}\n";
+
+  javaScript+="function process(){\n";
+  javaScript+=" if(xmlHttp.readyState==0 || xmlHttp.readyState==4){\n";
+  javaScript+="   xmlHttp.open('PUT','xml',true);\n";
+  javaScript+="   xmlHttp.onreadystatechange=handleServerResponse;\n"; // no brackets?????
+  javaScript+="   xmlHttp.send(null);\n";
+  javaScript+=" }\n";
+  javaScript+=" setTimeout('process()',1000);\n";
+  javaScript+="}\n";
+ 
+  javaScript+="function handleServerResponse(){\n";
+  javaScript+=" if(xmlHttp.readyState==4 && xmlHttp.status==200){\n";
+  javaScript+="   xmlResponse=xmlHttp.responseXML;\n";
+  javaScript+="   xmldoc = xmlResponse.getElementsByTagName('response');\n";
+  javaScript+="   message = xmldoc[0].firstChild.nodeValue;\n";
+  javaScript+="   document.getElementById('runtime').innerHTML=message;\n";
+  javaScript+=" }\n";
+  javaScript+="}\n";
+  javaScript+="</SCRIPT>\n";
+}
+
+void buildXML(){
+  XML="<?xml version='1.0'?>";
+  XML+="<response>";
+  XML+=millis2time();
+ // XML+=(digitalRead(OUTPIN))?"ON":"OFF";
+  XML+="</response>";
+}
+
+String millis2time(){
+  String Time="";
+  unsigned long ss;
+  byte mm,hh;
+  ss=millis()/1000;
+  hh=ss/3600;
+  mm=(ss-hh*3600)/60;
+  ss=(ss-hh*3600)-mm*60;
+  if(hh<10)Time+="0";
+  Time+=(String)hh+":";
+  if(mm<10)Time+="0";
+  Time+=(String)mm+":";
+  if(ss<10)Time+="0";
+  Time+=(String)ss;
+  return Time;
+}
+
+void handleXML(){
+  buildXML();
+  server.send(200,"text/xml",XML);
+}
 //void webHandleGpio(){
 //  String s;
 //   // Set GPIO according to the request

@@ -89,7 +89,7 @@ void loop ( void ) {
 
 
 void InitInterrupt(timercallback handler,int Step )
-    { 
+    {   Step=dimming*Step;
         timer1_disable();
         timer1_isr_init();
         timer1_attachInterrupt(handler);
@@ -102,20 +102,22 @@ void  ICACHE_RAM_ATTR do_on_delay()
   //digitalWrite(BUILTIN_LED, !digitalRead(BUILTIN_LED));
   
   if(zero_cross == true) {              
-    if(i>=dimming) {  
+   // if(i>=dimming) {  
                        
      digitalWrite(AC_LOAD, HIGH); // turn on light       
-      i=0;  // reset time step counter                         
+    //  i=0;  // reset time step counter                         
       zero_cross = false; //reset zero cross detection
       delayMicroseconds(10);         // triac On propogation delay
       digitalWrite(AC_LOAD, LOW);    // triac Off
-    } 
-    else {
-      i++; // increment time step counter 
-      digitalWrite(AC_LOAD, LOW);    // triac Off        
-                 
-    }                                
-  }    
+       Serial.println ( "zcd" );
+  //  } 
+//    else {
+//  //    i++; // increment time step counter 
+//      digitalWrite(AC_LOAD, LOW);    // triac Off        
+//                 
+//    }                                
+  }  
+timer1_disable();  
 }
 
 
@@ -137,20 +139,19 @@ void webHandleGpio(){
     if (server.arg("state_sw")=="1" || server.arg("state_sw")=="0" ) {
       int state_sw = server.arg("state_sw").toInt();
       detachInterrupt(AC_ZERO_CROSS);
-      delay(7);//bugfix for on off 
-      digitalWrite(AC_LOAD, state_sw);
-     
+       delay(7);
       Serial.print("Light switched via web request to  ");      
-      Serial.println(state_sw);      
+      Serial.println(state_sw);    
+       digitalWrite(AC_LOAD, state_sw);  
     }
-     if (server.arg("state_led")=="1" || server.arg("state_led")=="0" ) {
+     else if (server.arg("state_led")=="1" || server.arg("state_led")=="0" ) {
       int state_led = server.arg("state_led").toInt();
       digitalWrite(AC_LOAD_SSR, state_led);
       Serial.print("Light switched via web request to  ");      
       Serial.println(state_led);      
     }
   //   if (server.arg("state_dimmer") =="10" || server.arg("state_dimmer")=="20" || server.arg("state_dimmer")=="30" || server.arg("state_dimmer")=="40" || server.arg("state_dimmer")=="90" ) {
-   if (server.arg("state_dimmer") !="") {
+   else if (server.arg("state_dimmer") !="") {
       int state_dimmer = server.arg("state_dimmer").toInt();
       //digitalWrite(BUILTIN_LED, state_led);
      // Serial.print("Light switched via web request to  ");      
@@ -160,18 +161,21 @@ void webHandleGpio(){
       if(dimming>=120)
       {
       detachInterrupt(AC_ZERO_CROSS);
-      delay(7); //bugfix for on off 
+      delay(7);
       digitalWrite(AC_LOAD, LOW);
+      //Serial.print("dim grater  than 10  ");
       }
       else if(dimming<=10)
       {
       detachInterrupt(AC_ZERO_CROSS);
-      delay(7);//bugfix for on off 
+      delay(7);
       digitalWrite(AC_LOAD, HIGH);
+      Serial.print("dim less than 10  ");  
       }
       else
       {
       attachInterrupt(AC_ZERO_CROSS, zero_crosss_int, RISING); 
+      Serial.print("in zcd ");
       }   
     }
      

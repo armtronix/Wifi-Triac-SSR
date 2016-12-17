@@ -55,37 +55,42 @@ void mqtt_arrived(char* subTopic, byte* payload, unsigned int length) { // handl
     Serial.println(digitalRead(OUTPIN_TRIAC));
     Serial.print("Switching Triac to ");
     Serial.println("high");
-    digitalWrite(OUTPIN_TRIAC, 1);
+    delay(7);//to solve on off bug solved 
+    digitalWrite(OUTPIN_TRIAC, HIGH);
   } else if (msgString == "R13_OFF") {
     detachInterrupt(AC_ZERO_CROSS);
     Serial.print("Light is ");
     Serial.println(digitalRead(OUTPIN_TRIAC));
     Serial.print("Switching Triac to ");
     Serial.println("low");
-    digitalWrite(OUTPIN_TRIAC, 0);
+    delay(7);//to solve on off bug solved 
+    digitalWrite(OUTPIN_TRIAC, LOW);
   }
   else if (msgString == "R14_ON") {
     Serial.print("Led is ");
     Serial.println(digitalRead(OUTPIN_SSR));
     Serial.print("Switching SSR to ");
     Serial.println("high");
-    digitalWrite(OUTPIN_SSR, 1);
+    digitalWrite(OUTPIN_SSR, HIGH);
   } else if (msgString == "R14_OFF") {
     Serial.print("Led is ");
     Serial.println(digitalRead(OUTPIN_SSR));
     Serial.print("Switching SSR to ");
     Serial.println("low");
-    digitalWrite(OUTPIN_SSR, 0);
+    digitalWrite(OUTPIN_SSR, LOW);
   }
-  else if (msgString != "")
+  else if (msgString != "")//48xxx
   { 
-    String dim_str = getValue(msgString,':', 0);
-    String dim_val_str = getValue(msgString,':', 1);
-    int dim_val = dim_val_str.toInt();
-    
-    if(dim_str =="D")
+    //String dim_str = getValue(msgString,'8', 0);
+    //String dim_val_str = getValue(msgString,'8', 1);
+    String dim_val_str = msgString;
+    String dim_str ="4";//debug 
+    if(dim_str =="4")
     {
-     dimming =127-dim_val;
+     int dim_val = dim_val_str.toInt();
+     if(dim_val>=0 && dim_val <=100)
+     {
+      dimming =127-dim_val;
       delay(5); 
       if(dimming>=120)
       {
@@ -102,9 +107,14 @@ void mqtt_arrived(char* subTopic, byte* payload, unsigned int length) { // handl
       attachInterrupt(AC_ZERO_CROSS, zero_crosss_int, RISING); 
       }   
       Serial.println(dim_val);
+     }
+    else
+     {
+     }
+    } 
     }
     
-    }
+    
   
 }
 

@@ -60,14 +60,21 @@ extern "C" {
 //***** Settings declare ********************************************************************************************************* 
 String hostName ="Armtronix"; //The MQTT ID -> MAC adress will be added to make it kind of unique
 int iotMode=0; //IOT mode: 0 = Web control, 1 = MQTT (No const since it can change during runtime)
+
 //select GPIO's
 #define OUTPIN_TRIAC 13 //output pin of Triac
 #define INPIN 0  // input pin (push button)
 #define OUTPIN_SSR 14  //output pin of SSR
+#define SWITCH_INPIN3 4  // input pin (Physical Switch)   //Intially while booting maintain this gpio2 to high to low by placing the physical switch in off condition //trigger relay1
+#define SWITCH_INPIN4 5  // input pin (Physical Switch)   //trigger relay2
+#define AC_ZERO_CROSS  12   // input to Opto Triac pin 
+
+
 #define RESTARTDELAY 3 //minimal time in sec for button press to reset
 #define HUMANPRESSDELAY 50 // the delay in ms untill the press should be handled as a normal push by human. Button debounce. !!! Needs to be less than RESTARTDELAY & RESETDELAY!!!
 #define RESETDELAY 20 //Minimal time in sec for button press to reset all settings and boot to config mode
-#define AC_ZERO_CROSS  12   // input to Opto Triac pin   
+  
+
 
 //##### Object instances ##### 
 MDNSResponder mdns;
@@ -106,6 +113,11 @@ String subTopic;
 String mqttServer = "";
 const char* otaServerIndex = "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
 
+String javaScript,XML;
+int switch_status3, switch_status4; //Physical state of the switch
+int state_13, state_14, state_dimmer_mode;
+int send_status_13, send_status_14;
+
 //-------------- void's -------------------------------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
@@ -115,9 +127,16 @@ void setup() {
   pinMode(OUTPIN_SSR, OUTPUT);
   pinMode(AC_ZERO_CROSS, INPUT);
   pinMode(INPIN, INPUT_PULLUP);
+
+    //define manual switch
+   pinMode(SWITCH_INPIN3, INPUT_PULLUP);
+   pinMode(SWITCH_INPIN4, INPUT_PULLUP);  
+
+   
   //digitalWrite(OUTLED, HIGH);
   btn_timer.attach(0.05, btn_handle);
   Debugln("DEBUG: Entering loadConfig()");
+  
   if (!SPIFFS.begin()) {
     Serial.println("Failed to mount file system");
   }
@@ -232,6 +251,93 @@ void btn_handle()
 
 //-------------------------------- Main loop ---------------------------
 void loop() {
+
+
+////*---------------------------------------------------------------------*gpio13/
+if(switch_status3==(digitalRead(SWITCH_INPIN3)))// to read the status of physical switch
+   {
+        // send_status=0;
+   }
+   else
+  {
+    state_dimmer_mode=0;
+    switch_status3=(digitalRead(SWITCH_INPIN3));
+     send_status_13=1;
+   }
+if(send_status_13==1)
+  {
+     send_status_13=0;
+     toPub = 1;   
+  }
+  else
+  {   
+     toPub = 0;
+  }
+
+if(!state_dimmer_mode)
+{
+  detachInterrupt(AC_ZERO_CROSS);
+  delay(7);
+if(((state_13)&&(switch_status3))||((!state_13)&&(!switch_status3)))  //exor logic
+      {
+      //digitalWrite(OUTLED, HIGH);
+      digitalWrite(OUTPIN_TRIAC, HIGH);
+     // toPub = 1;
+       state="Light is ON";
+      //Serial.print("Light switched via web request to  ");      
+      //Serial.println(digitalWrite(OUTPIN, HIGH));      
+      }
+      else
+      {
+      digitalWrite(OUTPIN_TRIAC, LOW);
+      //toPub = 1;
+       state="Light is OFF";
+      //Serial.print("Light switched via web request to  ");      
+      //Serial.println(digitalWrite(OUTPIN, LOW)); 
+      }
+}
+///*---------------------------------------------------------------------*gpio14/
+//
+if(switch_status4==(digitalRead(SWITCH_INPIN4)))// to read the status of physical switch
+   {
+        // send_status=0;
+   }
+   else
+  {
+    switch_status4=(digitalRead(SWITCH_INPIN4));
+     send_status_14=1;
+   }
+if(send_status_14==1)
+  {
+     send_status_14=0;
+     toPub = 1;   
+  }
+  else
+  {   
+     toPub = 0;
+  }
+
+
+if(((state_14)&&(switch_status4))||((!state_14)&&(!switch_status4)))  //exor logic
+      {
+      //digitalWrite(OUTLED, HIGH);
+      digitalWrite(OUTPIN_SSR, HIGH);
+     // toPub = 1;
+       state="Light is ON";
+      //Serial.print("Light switched via web request to  ");      
+      //Serial.println(digitalWrite(OUTPIN, HIGH));      
+      }
+      else
+      {
+      digitalWrite(OUTPIN_SSR, LOW);
+      //toPub = 1;
+       state="Light is OFF";
+      //Serial.print("Light switched via web request to  ");      
+      //Serial.println(digitalWrite(OUTPIN, LOW)); 
+      }
+/*---------------------------------------------------------------------*/
+
+  
   //Debugln("DEBUG: loop() begin");
   if(configToClear==1){
     //Debugln("DEBUG: loop() clear config flag set!");

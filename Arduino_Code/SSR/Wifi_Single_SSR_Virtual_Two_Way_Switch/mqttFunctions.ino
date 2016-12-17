@@ -49,18 +49,40 @@ void mqtt_arrived(char* subTopic, byte* payload, unsigned int length) { // handl
   buf[i] = '\0';
   String msgString = String(buf);
   Serial.println(" message: " + msgString);
-  if (msgString == "R13_ON"){
+  if ((msgString == "R13_ON"))
+  {
       Serial.print("Light is ");
       Serial.println(digitalRead(OUTPIN));      
       Serial.print("Switching light to "); 
       Serial.println("high");
-      digitalWrite(OUTPIN, 1); 
-  } else if (msgString == "R13_OFF"){
+      if(switch_status==1)
+      { 
+      state_sw=0;
+      }
+      else
+      { 
+      state_sw=1;
+      
+      }
+      send_status=1;
+      
+  } 
+    else if ((msgString == "R13_OFF")){
       Serial.print("Light is ");
       Serial.println(digitalRead(OUTPIN));    
       Serial.print("Switching light to "); 
       Serial.println("low");
-      digitalWrite(OUTPIN, 0); 
+       if(switch_status==0)
+      { 
+      state_sw=0;
+      }
+      else
+      { 
+      state_sw=1;   
+      }
+      send_status=1;
+      send_status=1;
+      //digitalWrite(OUTPIN, 0); 
   }
   if (msgString == "Led_on"){
       Serial.print("Led is ");
@@ -75,6 +97,10 @@ void mqtt_arrived(char* subTopic, byte* payload, unsigned int length) { // handl
       Serial.println("low");
       digitalWrite(OUTLED, 0); 
   } 
+  else if (msgString == "Status")
+  {
+       send_status=1;
+  }
   else if (msgString == "Sensor_Enable"){
       Serial.print("Sensor Enabled");
       attachInterrupt(PIR_INPIN, pir_sensor_int, CHANGE);       

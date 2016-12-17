@@ -6,7 +6,8 @@
  *    http://server_ip will give a config page with
  *  While a WiFi config is set:
  *    http://server_ip/gpio -> Will display the GIPIO state and a switch form for it
- *    http://server_ip/gpio?state=0 -> Will change the GPIO directly and display the above aswell
+ *    http://server_ip/gpio?state_sw=0 -> Will change the GPIO13 to Low (Relay OFF)
+ *    http://server_ip/gpio?state_sw=1 -> Will change the GPIO13 to High (Relay ON)
  *    http://server_ip/cleareeprom -> Will reset the WiFi setting and rest to configure mode as AP
  *  server_ip is the IP address of the ESP8266 module, will be
  *  printed to Serial when the module is connected. (most likly it will be 192.168.4.1)
@@ -19,6 +20,7 @@
  *  - https://gist.github.com/igrr/7f7e7973366fc01d6393
  *  - http://www.esp8266.com/viewforum.php?f=25
  *  - http://www.esp8266.com/viewtopic.php?f=29&t=2745
+ *    http://www.esp8266.com/viewtopic.php?p=30065 Ajax auto update for html page By Manudax
  *  - And the whole Arduino and ESP8266 comunity
  */
 
@@ -59,7 +61,8 @@ int iotMode = 0; //IOT mode: 0 = Web control, 1 = MQTT (No const since it can ch
 //select GPIO's
 #define OUTPIN 13 //output pin
 #define INPIN 0  // input pin (push button)
-#define PIR_INPIN 14  // input pin (push button)
+#define PIR_INPIN 14  // input pin (Sensor)
+#define SWITCH_INPIN 4  // input pin (push button)
 #define OUTLED 12
 #define RESTARTDELAY 3 //minimal time in sec for button press to reset
 #define HUMANPRESSDELAY 50 // the delay in ms untill the press should be handled as a normal push by human. Button debounce. !!! Needs to be less than RESTARTDELAY & RESETDELAY!!!
@@ -83,11 +86,15 @@ boolean inApMode = 0;
 int webtypeGlob;
 int otaCount = 300; //imeout in sec for OTA mode
 int current; //Current state of the button
+int switch_status; //Physical state of the switch
+int state_sw ;
+int send_status;
 unsigned long count = 0; //Button press time counter
 String st; //WiFi Stations HTML list
 String state; //State of light
 char buf[40]; //For MQTT data recieve
 char* host; //The DNS hostname
+String javaScript,XML;
 //To be read from Config file
 String esid = "";
 String epass = "";
@@ -105,6 +112,7 @@ void setup() {
   pinMode(OUTLED, OUTPUT);
   pinMode(INPIN, INPUT_PULLUP);
   pinMode(PIR_INPIN, INPUT);
+  pinMode(SWITCH_INPIN, INPUT);
   digitalWrite(OUTLED, HIGH);
   //attachInterrupt(PIR_INPIN, pir_sensor_int, CHANGE);//add if pir connected
   btn_timer.attach(0.05, btn_handle);
@@ -205,7 +213,50 @@ void btn_handle()
 
 //-------------------------------- Main loop ---------------------------
 void loop() {
+
+
+   if(switch_status==(!digitalRead(SWITCH_INPIN)))// to read the status of physical switch
+   {
+        // send_status=0;
+   }
+   else
+   {
+    switch_status=(!digitalRead(SWITCH_INPIN));
+     send_status=1;
+   }
+
+  if(send_status==1)
+  {
+     send_status=0;
+     toPub = 1;   
+  }
+  else
+  {   
+     toPub = 0;
+  }
+   
+
+  
+  if(((state_sw)&&(!switch_status))||((!state_sw)&&(switch_status)))  //exor logic
+      {
+      //digitalWrite(OUTLED, HIGH);
+      digitalWrite(OUTPIN, HIGH);
+     // toPub = 1;
+       state="Light is ON";
+      //Serial.print("Light switched via web request to  ");      
+      //Serial.println(digitalWrite(OUTPIN, HIGH));      
+      }
+      else
+      {
+      digitalWrite(OUTPIN, LOW);
+      //toPub = 1;
+       state="Light is OFF";
+      //Serial.print("Light switched via web request to  ");      
+      //Serial.println(digitalWrite(OUTPIN, LOW)); 
+      }
+  
   //Debugln("DEBUG: loop() begin");
+
   if (configToClear == 1) {
     //Debugln("DEBUG: loop() clear config flag set!");
     clearConfig() ? Serial.println("Config cleared!") : Serial.println("Config could not be cleared");
@@ -228,6 +279,10 @@ void loop() {
       //Debugln("DEBUG: loop() Web mode requesthandling ");
       server.handleClient();
       delay(1);
+      if(esid != "" && WiFi.status() != WL_CONNECTED) //wifi reconnect part
+      {
+        Scan_Wifi_Networks();
+      }
     } else if (iotMode == 1 && webtypeGlob != 1 && otaFlag != 1) {
       //Debugln("DEBUG: loop() MQTT mode requesthandling ");
       if (!connectMQTT()) {
