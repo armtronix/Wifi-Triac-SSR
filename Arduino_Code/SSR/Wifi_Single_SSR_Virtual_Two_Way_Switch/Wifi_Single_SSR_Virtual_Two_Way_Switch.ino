@@ -106,7 +106,8 @@ const char* otaServerIndex = "<form method='POST' action='/update' enctype='mult
 //-------------- void's -------------------------------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
-  delay(10);
+  WiFi.printDiag(Serial);
+  delay(100);
   // prepare GPIO2
   pinMode(OUTPIN, OUTPUT);
   pinMode(OUTLED, OUTPUT);

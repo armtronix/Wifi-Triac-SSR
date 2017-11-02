@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
@@ -63,6 +65,7 @@ public class Client extends Activity {
 	private static String SERVER_MAIN = "";
 	private String serverinputdata = null;
 	private String serveroutputdata = null;
+	private String serverinputdata_parsed = null;
 	private String temp_send=null;
 	public EditText et;
 	private Handler mHandler;
@@ -81,7 +84,8 @@ public class Client extends Activity {
 		//mHandler = new Handler();
         //mHandler.post(mUpdate);
         // Creating HTTP client
-        
+	    mHandler = new Handler();
+        mHandler.post(mUpdate);
 
         et =(EditText) findViewById(R.id.EditText01);
         
@@ -224,14 +228,16 @@ public class Client extends Activity {
 
 	private String SendDataFromAndroidDevice() {
 	    String result = "";
-        String u="http://"+SERVER_MAIN+temp_send;
+        String u="http://"+SERVER_MAIN+":"+SERVERPORT_MAIN+temp_send;
 	    try {
 	        HttpClient httpclient = new DefaultHttpClient();
 	        HttpGet getMethod = new HttpGet(u);
-
+	        //HttpGet getMethod2 = new HttpGet("http://"+SERVER_MAIN+"/xml");
 	        BufferedReader in = null;
 	        BasicHttpResponse httpResponse = (BasicHttpResponse) httpclient
 	                .execute(getMethod);
+	        //httpResponse = (BasicHttpResponse) httpclient.execute(getMethod2);
+	        
 	        in = new BufferedReader(new InputStreamReader(httpResponse
 	                .getEntity().getContent()));
 
@@ -241,7 +247,10 @@ public class Client extends Activity {
 	            sb.append(line);
 	        }
 	        in.close();
+	        //serverinputdata=sb.toString(); 
+	        //serverinputdata_parsed = serverinputdata.substring(30, 35);
 	        result = sb.toString(); 
+	        
 
 
 	    } catch (Exception e) {
@@ -249,6 +258,50 @@ public class Client extends Activity {
 	    }
 	    return result;
 	}
+	
+	private String Get_data_from_Device() {
+	    String result = "";
+        String u="http://"+SERVER_MAIN+"/xml";
+	    try {
+	        HttpClient httpclient = new DefaultHttpClient();
+	        HttpGet getMethod = new HttpGet(u);
+	        //HttpGet getMethod2 = new HttpGet("http://"+SERVER_MAIN+"/xml");
+	        BufferedReader in = null;
+	        BasicHttpResponse httpResponse = (BasicHttpResponse) httpclient
+	                .execute(getMethod);
+	        
+	        in = new BufferedReader(new InputStreamReader(httpResponse
+	                .getEntity().getContent()));
+
+	        StringBuffer sb = new StringBuffer("");
+	        String line = "";
+	        while ((line = in.readLine()) != null) {
+	            sb.append(line);
+	        }
+	        in.close();
+	        serverinputdata=sb.toString(); 
+	        String temp_string_data = serverinputdata.substring(31, 33);
+	        if(temp_string_data.equals("ON"))
+	        {
+	        	serverinputdata_parsed="Light is On";	
+	        }
+	        else if(temp_string_data.equals("OF")) 
+	        {
+	        	serverinputdata_parsed="Light is Off";
+	        }
+	        		
+	        result = sb.toString(); 
+	        
+
+
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	    return result;
+	}	
+	
+	
+	
 	
 private class HTTPdemo extends
     AsyncTask<String, Void, String> {
@@ -258,7 +311,10 @@ protected void onPreExecute() {}
 
 @Override
 protected String doInBackground(String... params) {
+	
     String result = SendDataFromAndroidDevice();
+    String result1 =Get_data_from_Device();
+    //et.setText(sb.toString());///here i need to work
     return result;
 }
 
@@ -278,7 +334,20 @@ protected void onPostExecute(String result) {
     }
 }
 }
-	
+
+private Runnable mUpdate = new Runnable() {
+	   public void run() {
+		   EditText dataget = (EditText) findViewById(R.id.Textget);
+		   String result1 =Get_data_from_Device();
+		   
+			dataget.setText(serverinputdata_parsed);
+			//dataget.setText("Light is Off");   
+		   
+		   //serveroutputdata_parsed = serverinputdata.substring(60, 90);
+		   //dataget.setText(serverinputdata_parsed);
+		   mHandler.postDelayed(this, 100);
+	    }
+};
 
 
 	

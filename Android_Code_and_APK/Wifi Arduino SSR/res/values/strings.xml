@@ -8,7 +8,7 @@
     <string name="stop">STOP</string>
     <string name="left">LEFT</string>
     <string name="right">RIGHT</string>
-    <string name="ip">192.168.4.1</string>
+    <string name="ip">192.168.1.11</string>
     <string name="port">80</string>
     <string name="connect">Connect</string>
     <string name="iplab">IP:</string>
