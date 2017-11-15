@@ -142,7 +142,7 @@ void launchWeb(int webtype) {
       //setOtaFlag(1); 
       if (webtype==1 || iotMode==0){ //in config mode or WebControle
           if (webtype==1) {           
-            webtypeGlob == 1;
+            webtypeGlob = 1;
             Serial.println(WiFi.softAPIP());
             server.on("/", webHandleConfig);
             server.on("/a", webHandleConfigSave);
