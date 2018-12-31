@@ -23,6 +23,7 @@
  *  - https://gist.github.com/igrr/7f7e7973366fc01d6393
  *  - http://www.esp8266.com/viewforum.php?f=25
  *  - http://www.esp8266.com/viewtopic.php?f=29&t=2745
+ *  Dimmer Code with timer from https://github.com/nassir-malik/IOT-Light-Dimmer
  *  - And the whole Arduino and ESP8266 comunity
  */
 
@@ -77,7 +78,7 @@ ESP8266WebServer server(80);
 WiFiClient wifiClient;
 PubSubClient mqttClient;
 Ticker btn_timer;
-//Ticker otaTickLoop;
+Ticker otaTickLoop;
 
 //##### Flags ##### They are needed because the loop needs to continue and cant wait for long tasks!
 int rstNeed=0;   // Restart needed to apply new settings
