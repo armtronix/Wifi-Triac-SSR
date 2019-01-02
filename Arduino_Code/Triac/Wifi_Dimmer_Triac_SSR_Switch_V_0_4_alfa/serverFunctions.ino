@@ -1,5 +1,104 @@
 
+// -- BEGIN Index.html
+static const char PROGMEM INDEX_HTML[] = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+<meta name = "viewport" content = "width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0">
+<title>ARMtronix Technologies LLP</title>
+<style>
+body { background: #262830 url('https://litumiot.com/wp-content/uploads/2016/10/page-center-background-image-iot-2.jpg') repeat; font-family: Arial, Helvetica, Sans-Serif; Color: #fffff9; }
+#container { width: 80%; max-width: 450px; margin: auto; }
+.bulb { display: block; clear: none; width: 32px; height: 32px; padding-bottom: 0.5em; background-attachment: fixed; background-position: center; background-repeat: no-repeat; }
+.bulbOn { background: transparent url('http://sasakaranovic.com/iotdimmer/bulbON.png') top left no-repeat; float: right; }
+.bulbOff{ background: transparent url('http://sasakaranovic.com/iotdimmer/bulbOFF.png') top left no-repeat; float: left; }
+.image {font-size: 0; text-align: center; width: 450px;  height: 150px;}
+img {display: inline-block; vertical-align: middle; max-height: 100%; max-width: 100%;}
+.trick {display: inline-block; vertical-align: middle; height: 150px;}
 
+h1 {  display: block; font-size: 2em; margin-top: 0.67em; margin-bottom: 0.67em; margin-left: 0; margin-right: 0; font-weight: bold; text-align: center; }
+.slidecontainer {width: 100%; }
+.slider {width: 100%; margin: 0 0 3em 0; }
+  .buttonOff { background-color: #f44336;margin-top: 0.67em; margin-bottom: 0.67em }
+  .buttonOn{ background-color: #4CAF50;margin-top: 0.67em; margin-bottom: 0.67em }
+  a { 
+  background-color: #212121;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+  margin-right: 1em;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+  border-radius: 4px;
+  }
+</style>
+<script>
+var websock;
+function start() {
+websock = new WebSocket('ws://' + window.location.hostname + ':81/');
+websock.onopen = function(evt) { console.log('websock open'); };
+websock.onclose = function(evt) { console.log('websock close'); };
+websock.onerror = function(evt) { console.log(evt); };
+websock.onmessage = function(evt) {
+console.log(evt);
+var ch1 = document.getElementById('ch1');
+var ch2 = document.getElementById('ch2');
+var ch3 = document.getElementById('ch3');
+var ch_values = JSON.parse(evt.data);
+ch1.value = ch_values.ch1;
+ch2.value = ch_values.ch2;
+ch3.value = ch_values.ch3;
+};
+}
+function setCh1(val) {
+var dat = 'ch1:'+ val
+websock.send(dat);
+}
+function setCh2(val) {
+var dat = 'ch2:'+ val
+websock.send(dat);
+}
+function updateSlider(e) {
+var dat = e.id +':'+ e.value
+websock.send(dat);
+}
+</script>
+</head>
+<body onload="javascript:start();">
+<div id="container">
+<div class="image">
+<div class="trick"></div>
+  <img src='http://armtronix.in/img/logo.png'/>
+</div>
+<h1>Wifi Dimmer & ON/OFF Board</h1>
+<div class="slidecontainer">
+<div class="bulb bulbOn"></div>
+<div class="bulb bulbOff"></div>
+<input id="ch1" type="range" min="0" max="255" value="0" class="slider" onchange="updateSlider(this)">
+</div>
+<div class="slidecontainer"style="display:none; visibility: hidden">
+<div class="bulb bulbOn"></div>
+<div class="bulb bulbOff"></div>
+<input id="ch2" type="range" min="1" max="255" value="0" class="slider" onchange="updateSlider(this)">
+</div>
+<div class="slidecontainer" style="display:none; visibility: hidden">
+<div class="bulb bulbOn"></div>
+<div class="bulb bulbOff"></div>
+<input id="ch3" type="range" min="1" max="255" value="0" class="slider" onchange="updateSlider(this)">
+</div>
+<div class="slidecontainer" style="text-align: center">
+<a href="#" class="buttonOff" onClick="setCh1(0)">Turn Off</a> <a href="#" onClick="setCh1(90)">Set to 50%</a> <a href="#" class="buttonOn"  onClick="setCh1(200)">Turn On</a>
+</div>
+<div class="slidecontainer" style="text-align: center">
+<a href="#" class="buttonOff" onClick="setCh2(0)">Turn Off SSR</a> <a href="#" class="buttonOn"  onClick="setCh2(100)">Turn On SSR</a>
+</div>
+</div>
+</body>
+</html>
+)rawliteral";
+// -- END Index.html
 
 void initWiFi(){
   Serial.println();
@@ -140,8 +239,10 @@ void launchWeb(int webtype) {
         yield();
       });
       server.begin();
+      
       Serial.printf("Ready! Open http://%s.local in your browser\n", host);
       MDNS.addService("http", "tcp", 80);
+      MDNS.addService("ws", "tcp", 81);  //added by naren on 02/01/2019
 //      otaTickLoop.attach(1, otaCountown);
     } else { 
       //setOtaFlag(1); 
@@ -153,6 +254,9 @@ void launchWeb(int webtype) {
             server.on("/a", webHandleConfigSave);
             server.on("/gpio", webHandleGpio);//naren          
           } else {
+             webSocket.begin();  //added by naren on 02/01/2019
+             webSocket.onEvent(webSocketEvent);  //added by naren on 02/01/2019
+             Serial.println("setting up MDNS responder now!");
             //setup DNS since we are a client in WiFi net
             if (!MDNS.begin(host)) {
               Serial.println("Error setting up MDNS responder!");
@@ -321,35 +425,74 @@ void webHandleGpio(){
      ESP.reset(); 
     }
      
-    s = "TRIAC is now ";
-    s += (digitalRead(OUTPIN_TRIAC))?"ON":"OFF";
-    s += "<p>Change to <form action='gpio'><input type='radio' name='state_sw' value='1' ";
-    s += (digitalRead(OUTPIN_TRIAC))?"checked":"";
-    s += ">TRIAC_ON<input type='radio' name='state_sw' value='0' ";
-    s += (digitalRead(OUTPIN_TRIAC))?"":"checked";
-    s += ">TRIAC_OFF <input type='submit' value='Submit'></form></p>";  
-
-    s += "SSR is now ";
-    s += (digitalRead(OUTPIN_SSR))?"ON":"OFF";
-    s += "<p>Change to <form action='gpio'><input type='radio' name='state_led' value='1' ";
-    s += (digitalRead(OUTPIN_SSR))?"checked":"";
-    s += ">SSR_ON <input type='radio' name='state_led' value='0' ";
-    s += (digitalRead(OUTPIN_SSR))?"":"checked";
-    s += ">SSR_OFF <input type='submit' value='Submit'></form></p>"; 
-    
-    s += "<p>Change to <form action='gpio' name='state' method='GET' oninput='showValue(state_dimmer.value)'><input type='range' name='state_dimmer' id='state_dimmer' min='0' max='90' step='5' value='0'  >" ; 
-    s += "</form></p>";
-    s += "<script type='text/javascript'>";
-    s += "function showValue(dimming)";
-    s += "{  document.querySelector('#state_dimmer').value=dimming ;";
-    s += "   document.forms['state'].submit();";
-    s += "}";
-    s += "</script>";
-     s +="<p><a href=\"gpio?reboot=1\">Reboot</a></p>";
-     server.send(200, "text/html", "<html><head><script>var connection = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);connection.onopen = function () {  connection.send('Connect ' + new Date()); }; connection.onerror = function (error) {    console.log('WebSocket Error ', error);};connection.onmessage = function (e) {  console.log('Server: ', e.data);};function sendRGB() {  var r = parseInt(document.getElementById('r').value).toString(16);  var g = parseInt(document.getElementById('g').value).toString(16);  var b = parseInt(document.getElementById('b').value).toString(16);  if(r.length < 2) { r = '0' + r; }   if(g.length < 2) { g = '0' + g; }   if(b.length < 2) { b = '0' + b; }   var rgb = '#'+r+g+b;    console.log('RGB: ' + rgb); connection.send(rgb); }</script></head><body>LED Control:<br/><br/>R: <input id=\"r\" type=\"range\" min=\"0\" max=\"255\" step=\"1\" oninput=\"sendRGB();\" /><br/>G: <input id=\"g\" type=\"range\" min=\"0\" max=\"255\" step=\"1\" oninput=\"sendRGB();\" /><br/>B: <input id=\"b\" type=\"range\" min=\"0\" max=\"255\" step=\"1\" oninput=\"sendRGB();\" /><br/></body></html>");
-  // server.send(200, "text/html", s);
-        MDNS.addService("ws", "tcp", 81);
+//    s = "TRIAC is now ";
+//    s += (digitalRead(OUTPIN_TRIAC))?"ON":"OFF";
+//    s += "<p>Change to <form action='gpio'><input type='radio' name='state_sw' value='1' ";
+//    s += (digitalRead(OUTPIN_TRIAC))?"checked":"";
+//    s += ">TRIAC_ON<input type='radio' name='state_sw' value='0' ";
+//    s += (digitalRead(OUTPIN_TRIAC))?"":"checked";
+//    s += ">TRIAC_OFF <input type='submit' value='Submit'></form></p>";  
+//
+//    s += "SSR is now ";
+//    s += (digitalRead(OUTPIN_SSR))?"ON":"OFF";
+//    s += "<p>Change to <form action='gpio'><input type='radio' name='state_led' value='1' ";
+//    s += (digitalRead(OUTPIN_SSR))?"checked":"";
+//    s += ">SSR_ON <input type='radio' name='state_led' value='0' ";
+//    s += (digitalRead(OUTPIN_SSR))?"":"checked";
+//    s += ">SSR_OFF <input type='submit' value='Submit'></form></p>"; 
+//    
+//    s += "<p>Change to <form action='gpio' name='state' method='GET' oninput='showValue(state_dimmer.value)'><input type='range' name='state_dimmer' id='state_dimmer' min='0' max='90' step='5' value='0'  >" ; 
+//    s += "</form></p>";
+//    s += "<script type='text/javascript'>";
+//    s += "function showValue(dimming)";
+//    s += "{  document.querySelector('#state_dimmer').value=dimming ;";
+//    s += "   document.forms['state'].submit();";
+//    s += "}";
+//    s += "</script>";
+//    s +="<p><a href=\"gpio?reboot=1\">Reboot</a></p>";
+    //server.send(200, "text/html", "<html><head><script>var connection = new WebSocket('ws://'+location.hostname+':81/', ['arduino']);connection.onopen = function () {  connection.send('Connect ' + new Date()); }; connection.onerror = function (error) {    console.log('WebSocket Error ', error);};connection.onmessage = function (e) {  console.log('Server: ', e.data);};function sendRGB() {  var r = parseInt(document.getElementById('r').value).toString(16);  var g = parseInt(document.getElementById('g').value).toString(16);  var b = parseInt(document.getElementById('b').value).toString(16);  if(r.length < 2) { r = '0' + r; }   if(g.length < 2) { g = '0' + g; }   if(b.length < 2) { b = '0' + b; }   var rgb = '#'+r+g+b;    console.log('RGB: ' + rgb); connection.send(rgb); }</script></head><body>LED Control:<br/><br/>R: <input id=\"r\" type=\"range\" min=\"0\" max=\"255\" step=\"1\" oninput=\"sendRGB();\" /><br/>G: <input id=\"g\" type=\"range\" min=\"0\" max=\"255\" step=\"1\" oninput=\"sendRGB();\" /><br/>B: <input id=\"b\" type=\"range\" min=\"0\" max=\"255\" step=\"1\" oninput=\"sendRGB();\" /><br/></body></html>");
+    //server.send(200, "text/html", s);
+     server.send_P(200, "text/html", INDEX_HTML);    
 }
 
-
+void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length) {
+ 
+    switch(type) {
+        case WStype_DISCONNECTED:
+            Serial.printf("[%u] Disconnected!\n", num);
+            break;
+        case WStype_CONNECTED: {
+            IPAddress ip = webSocket.remoteIP(num);
+            //Serial.println("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+ 
+            // send message to client
+            webSocket.sendTXT(num, "Connected");
+        }
+            break;
+        case WStype_TEXT:
+            Serial.printf("[%u] get Text: %s\n", num, payload);
+             Serial.write((const char *)payload);
+            if(payload[2]=='0')
+            {
+              //Serial.println("%s",payload);
+             // tarBrightness =payload;
+            }
+            if(payload[2]=='1')
+            {   String dum1=(const char *)payload;
+                //Serial.write((const char *)payload);
+                Serial.println(dum1.substring(4));
+                tarBrightness =dum1.substring(4).toInt();
+            }
+           if(payload[2]=='2')
+            {
+              String dum2=(const char *)payload;
+              if(dum2.substring(4).toInt()==100)
+              digitalWrite(OUTPIN_SSR, HIGH);
+              else if(dum2.substring(4).toInt()==0)
+              digitalWrite(OUTPIN_SSR, LOW);
+            }
+            break;
+    }
+ 
+}
 

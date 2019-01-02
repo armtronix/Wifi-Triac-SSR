@@ -48,6 +48,8 @@
 #include <ESP8266mDNS.h>
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
+#include <WebSocketsServer.h>
+#include <Hash.h>
 //#include <EEPROM.h>
 #include <Ticker.h>
 #include <PubSubClient.h>
@@ -75,6 +77,7 @@ const byte  AC_ZERO_CROSS = 12;   // input to Opto Triac pin
 //##### Object instances ##### 
 MDNSResponder mdns;
 ESP8266WebServer server(80);
+WebSocketsServer webSocket = WebSocketsServer(81);
 WiFiClient wifiClient;
 PubSubClient mqttClient;
 Ticker btn_timer;
@@ -110,7 +113,7 @@ byte statem = 1;
 byte tarBrightness = 0;
 byte curBrightness = 0;
 byte zcState = 0; // 0 = ready; 1 = processing;
-
+int max_brightness =255;
 
 //-------------- void's -------------------------------------------------------------------------------------
 void setup() {
@@ -157,7 +160,7 @@ void dimTimerISR()
       if (curBrightness > tarBrightness || (statem == 0 && curBrightness > 0)) {
         --curBrightness;
       }
-      else if (curBrightness < tarBrightness && statem == 1 && curBrightness < 100) {
+      else if (curBrightness < tarBrightness && statem == 1 && curBrightness < max_brightness) {
         ++curBrightness;
       }
     }
@@ -174,7 +177,7 @@ void dimTimerISR()
       statem = 1;
       digitalWrite(OUTPIN_TRIAC, 0);
     }
-    else if (curBrightness == 100) {
+    else if (curBrightness == max_brightness) {
       statem = 1;
       digitalWrite(OUTPIN_TRIAC, 1);
     }
@@ -192,11 +195,11 @@ void zcDetectISR()
   {
     zcState = 1;
   
-    if (curBrightness < 100 && curBrightness > 0) 
+    if (curBrightness < max_brightness && curBrightness > 0) 
     {
       digitalWrite(OUTPIN_TRIAC, 0);
       
-      int dimDelay = 76 * (100 - curBrightness)+400;
+      int dimDelay = 35* (max_brightness - curBrightness);  //8050
       hw_timer_arm(dimDelay);
     }
   }
@@ -244,6 +247,7 @@ void btn_handle()
 
 //-------------------------------- Main loop ---------------------------
 void loop() {
+   webSocket.loop();
   //Debugln("DEBUG: loop() begin");
   if(configToClear==1){
     //Debugln("DEBUG: loop() clear config flag set!");
