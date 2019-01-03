@@ -1,5 +1,5 @@
 
-// -- BEGIN Index.html
+// -- BEGIN mainpage.html
 static const char PROGMEM INDEX_HTML[] = R"rawliteral(
 <!DOCTYPE html>
 <html>
@@ -7,7 +7,7 @@ static const char PROGMEM INDEX_HTML[] = R"rawliteral(
 <meta name = "viewport" content = "width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0">
 <title>ARMtronix Technologies LLP</title>
 <style>
-body { background: #262830 url('https://litumiot.com/wp-content/uploads/2016/10/page-center-background-image-iot-2.jpg') repeat; font-family: Arial, Helvetica, Sans-Serif; Color: #fffff9; }
+body { background: #ffffff repeat; font-family: Arial, Helvetica, Sans-Serif; Color:  #ff0000; }
 #container { width: 80%; max-width: 450px; margin: auto; }
 .bulb { display: block; clear: none; width: 32px; height: 32px; padding-bottom: 0.5em; background-attachment: fixed; background-position: center; background-repeat: no-repeat; }
 .bulbOn { background: transparent url('http://sasakaranovic.com/iotdimmer/bulbON.png') top left no-repeat; float: right; }
@@ -19,7 +19,7 @@ img {display: inline-block; vertical-align: middle; max-height: 100%; max-width:
 h1 {  display: block; font-size: 2em; margin-top: 0.67em; margin-bottom: 0.67em; margin-left: 0; margin-right: 0; font-weight: bold; text-align: center; }
 .slidecontainer {width: 100%; }
 .slider {width: 100%; margin: 0 0 3em 0; }
-  .buttonOff { background-color: #f44336;margin-top: 0.67em; margin-bottom: 0.67em }
+  .buttonOff { background-color: #ff0000;margin-top: 0.67em; margin-bottom: 0.67em }
   .buttonOn{ background-color: #4CAF50;margin-top: 0.67em; margin-bottom: 0.67em }
   a { 
   background-color: #212121;
@@ -98,7 +98,95 @@ websock.send(dat);
 </body>
 </html>
 )rawliteral";
-// -- END Index.html
+// ------------------------------------ END Index.html -----------------------------------------------------------------------------------------------------------------------------------
+//url('https://litumiot.com/wp-content/uploads/2016/10/page-center-background-image-iot-2.jpg')
+
+// ------------------------------------  MAIN.html -----------------------------------------------------------------------------------------------------------------------------------
+
+static const char PROGMEM MAIN_HTML[] = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+<meta name = "viewport" content = "width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0">
+<title>ARMtronix Technologies LLP</title>
+<style>
+body { background: #ffffff  repeat; font-family: Arial, Helvetica, Sans-Serif; Color:  #f44336; }
+#container { width: 80%; max-width: 450px; margin: auto; }
+.image {font-size: 0; text-align: center; width: 450px;  height: 150px;}
+img {display: inline-block; vertical-align: middle; max-height: 100%; max-width: 100%;}
+.trick {display: inline-block; vertical-align: middle; height: 150px;}
+h1 {  display: block; font-size: 2em; margin-top: 0.67em; margin-bottom: 0.67em; margin-left: 0; margin-right: 0; font-weight: bold; text-align: center; color: #f44336; }
+  a { 
+  background-color: #ff0000;
+    border: none;
+    color: white;
+    padding: 15px 32px;
+  margin-top: 0.67em; 
+  margin-bottom: 0.67em;
+  margin-right: 0em;
+  margin-left: 0em; 
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    font-size: 18px;
+    font-weight: bold;
+  border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+<div id="container">
+<div class="image">
+<div class="trick"></div>
+  <img src='http://armtronix.in/img/logo.png'/>
+</div>
+<h1>Wifi Dimmer & ON/OFF Board</h1>
+<a href=\gpio>Control Outputs</a><br />
+<a href=\cleareeprom>Clear settings an boot into Config mode</a><br />
+</div>
+</body>
+</html>
+)rawliteral";
+// ------------------------------------ END MAIN.html -----------------------------------------------------------------------------------------------------------------------------------
+
+static const char PROGMEM CONFIG_HTML[] = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+<meta name = "viewport" content = "width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0">
+<title>ARMtronix Technologies LLP</title>
+</head>
+<body>
+<div id="container">
+<h1>Wifi Dimmer & ON/OFF Board</h1>
+<form method='get' action='a'>
+<label>SSID: </label><input type="text" name='ssid' length=32><label> Pass: </label><input name='pass' type='password' length=64></br>
+<label>IOT Mode: </label><input type='radio' name='iot' value='0'>HTTP <input type='radio' name='iot' value='1' checked> MQTT</br>
+<label>MQTT Broker IP/DNS: </label><input type="text" name='host' length=15></br>
+<label>MQTT Publish topic: </label><input type="text" name='pubtop' length=64></br>
+<label>MQTT Subscribe topic: </label><input type="text" name='subtop' length=64></br>
+        <div id="formbox">
+<input type='submit'>
+        </div>
+</form>
+</div>
+</body>
+</html>
+)rawliteral";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void initWiFi(){
   Serial.println();
@@ -314,7 +402,8 @@ void webHandleConfig(){
   s += "<input type='submit'></form></p>";
   s += "\r\n\r\n";
   Serial.println("Sending 200");  
-  server.send(200, "text/html", s); 
+ // server.send(200, "text/html", s); 
+  server.send_P(200, "text/html", CONFIG_HTML);
 }
 
 void webHandleConfigSave(){
@@ -371,8 +460,9 @@ void webHandleRoot(){
   s += "<a href=\"/gpio\">Controle GPIO</a><br />";
   s += "<a href=\"/cleareeprom\">Clear settings an boot into Config mode</a><br />";
   s += "\r\n\r\n";
-  Serial.println("Sending 200");  
-  server.send(200, "text/html", s); 
+  //Serial.println("Sending 200");  
+  //server.send(200, "text/html", s); 
+  server.send_P(200, "text/html",MAIN_HTML);
 }
 
 void webHandleClearRom(){
