@@ -224,15 +224,15 @@ if(!digitalRead(INPIN_REGULATOR))
 button_press_flag =0;
 if(count_regulator<=9)
 {
-tarBrightness =count_regulator;
+tarBrightness =count_regulator+10;
 count_regulator=count_regulator+10;
 }
 else
 {
-count_regulator=count_regulator+10;
+count_regulator=count_regulator+20;
 tarBrightness =count_regulator;
 }
-if(count_regulator<=255)
+if(count_regulator<=200)
      {
       Serial.print("Reg VAL:");
       Serial.println(count_regulator);
@@ -251,7 +251,7 @@ else
   button_press_flag =1;
   if (count_regulator > 1 && count_regulator < HUMANPRESSDELAY/5) 
     { 
-    if(count_regulator<=255)
+    if(count_regulator<=200)
      {
       //Serial.println(count_regulator);
      }

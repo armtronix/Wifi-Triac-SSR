@@ -175,13 +175,6 @@ input[type=submit]{
   background-color: #ff0000;
   border: none;
   border-radius: 4px;
-  display: block;
-  margin-left:auto;
-  margin-right:auto;
-  color: white;
-  padding: 15px 32px;
-  text-decoration: none;
-  text-align: center;
   cursor: pointer;
   font-weight: bold; 
   box-sizing: border-box;
