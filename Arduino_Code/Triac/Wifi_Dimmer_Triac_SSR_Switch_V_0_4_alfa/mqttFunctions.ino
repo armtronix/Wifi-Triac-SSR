@@ -51,6 +51,7 @@ void mqtt_arrived(char* subTopic, byte* payload, unsigned int length) { // handl
   Serial.println(" message: " + msgString);
   if (msgString == "R13_ON") {
     tarBrightness = 100;
+    count_regulator=tarBrightness;
     Serial.print("Light is ");
     Serial.println(digitalRead(OUTPIN_TRIAC));
     Serial.print("Switching Triac to ");
@@ -60,6 +61,7 @@ void mqtt_arrived(char* subTopic, byte* payload, unsigned int length) { // handl
   } else if (msgString == "R13_OFF") 
   {
     tarBrightness =0;
+    count_regulator=tarBrightness;
     Serial.print("Light is ");
     Serial.println(digitalRead(OUTPIN_TRIAC));
     Serial.print("Switching Triac to ");
@@ -93,6 +95,7 @@ void mqtt_arrived(char* subTopic, byte* payload, unsigned int length) { // handl
   { 
     String dim_val_str = msgString;
      tarBrightness = dim_val_str.toInt();
+     count_regulator=tarBrightness;
   }
  } 
  

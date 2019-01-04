@@ -156,8 +156,38 @@ static const char PROGMEM CONFIG_HTML[] = R"rawliteral(
 <meta name = "viewport" content = "width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable=0">
 <title>ARMtronix Technologies LLP</title>
 </head>
+<style>
+body { background: #ffffff  repeat; font-family: Arial, Helvetica, Sans-Serif; font-weight: bold; Color:  #f44336; }
+h1 {  display: block; font-size: 1.80em; margin-top: 0.67em; margin-bottom: 0.67em; margin-left: 0; margin-right: 0; font-weight: bold; text-align: center; color: #f44336; }
+input[type=text] {
+  width: 100%;
+  padding: 8px 20px;
+  margin: 8px 0;
+  box-sizing: border-box;
+}
+input[type=password] {
+  width: 100%;
+  padding: 8px 20px;
+  margin: 8px 0;
+  box-sizing: border-box;
+}
+input[type=submit]{
+  background-color: #ff0000;
+  border: none;
+  border-radius: 4px;
+  display: block;
+  margin-left:auto;
+  margin-right:auto;
+  color: white;
+  padding: 15px 32px;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  font-weight: bold; 
+  box-sizing: border-box;
+}
+</style>
 <body>
-<div id="container">
 <h1>Wifi Dimmer & ON/OFF Board</h1>
 <form method='get' action='a'>
 <label>SSID: </label><input type="text" name='ssid' length=32><label> Pass: </label><input name='pass' type='password' length=64></br>
@@ -165,11 +195,8 @@ static const char PROGMEM CONFIG_HTML[] = R"rawliteral(
 <label>MQTT Broker IP/DNS: </label><input type="text" name='host' length=15></br>
 <label>MQTT Publish topic: </label><input type="text" name='pubtop' length=64></br>
 <label>MQTT Subscribe topic: </label><input type="text" name='subtop' length=64></br>
-        <div id="formbox">
 <input type='submit'>
-        </div>
 </form>
-</div>
 </body>
 </html>
 )rawliteral";
@@ -488,10 +515,12 @@ void webHandleGpio(){
       if(state_sw ==1)
       {
         tarBrightness =100;
+        count_regulator=tarBrightness;
       }
       else if (state_sw ==0)
       {
          tarBrightness =0;
+         count_regulator=tarBrightness;
       }
       Serial.print("Light switched via web request to  ");      
       Serial.println(state_sw);      
@@ -572,6 +601,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
                 //Serial.write((const char *)payload);
                 Serial.println(dum1.substring(4));
                 tarBrightness =dum1.substring(4).toInt();
+                count_regulator=tarBrightness;
             }
            if(payload[2]=='2')
             {

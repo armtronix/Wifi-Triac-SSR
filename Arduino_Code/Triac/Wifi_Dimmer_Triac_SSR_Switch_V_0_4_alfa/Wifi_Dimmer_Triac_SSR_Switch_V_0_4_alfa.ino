@@ -72,7 +72,7 @@ const byte  AC_ZERO_CROSS = 12;   // input to Opto Triac pin
 #define RESTARTDELAY 3 //minimal time in sec for button press to reset
 #define HUMANPRESSDELAY 50 // the delay in ms untill the press should be handled as a normal push by human. Button debounce. !!! Needs to be less than RESTARTDELAY & RESETDELAY!!!
 #define RESETDELAY 20 //Minimal time in sec for button press to reset all settings and boot to config mode
-
+#define INPIN_REGULATOR 4  // input pin (push button)
 
 //##### Object instances ##### 
 MDNSResponder mdns;
@@ -95,6 +95,7 @@ int otaCount=300; //imeout in sec for OTA mode
 int current; //Current state of the button
 
 unsigned long count = 0; //Button press time counter
+unsigned long count_regulator = 0; //Button press time counter
 String st; //WiFi Stations HTML list
 String state; //State of light
 char buf[40]; //For MQTT data recieve
@@ -108,7 +109,8 @@ String mqttServer = "";
 const char* otaServerIndex = "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
 
 // Dimmer://
-byte fade = 1;
+int button_press_flag =1;
+byte fade = 0;
 byte statem = 1;
 byte tarBrightness = 0;
 byte curBrightness = 0;
@@ -122,8 +124,10 @@ void setup() {
   pinMode(OUTPIN_SSR, OUTPUT);
   pinMode(AC_ZERO_CROSS, INPUT_PULLUP);
   pinMode(INPIN, INPUT_PULLUP);
+  pinMode(INPIN_REGULATOR, INPUT_PULLUP);
   
   btn_timer.attach(0.05, btn_handle);
+  
   Debugln("DEBUG: Entering loadConfig()");
   if (!SPIFFS.begin()) {
     Serial.println("Failed to mount file system");
@@ -185,7 +189,7 @@ void dimTimerISR()
       digitalWrite(OUTPIN_TRIAC, 1); //naren commented
       
     }
-    Serial.println(curBrightness);
+    //Serial.println(curBrightness);
     zcState = 0;
 }
 
@@ -207,10 +211,66 @@ void zcDetectISR()
 
 void btn_handle()
 {
-  if(!digitalRead(INPIN)){
+if(count_regulator<=9)
+{
+  count_regulator=0;
+  tarBrightness =count_regulator;
+}
+
+if(!digitalRead(INPIN_REGULATOR))
+{
+  if(button_press_flag ==1)  
+{
+button_press_flag =0;
+if(count_regulator<=9)
+{
+tarBrightness =count_regulator;
+count_regulator=count_regulator+10;
+}
+else
+{
+count_regulator=count_regulator+10;
+tarBrightness =count_regulator;
+}
+if(count_regulator<=255)
+     {
+      Serial.print("Reg VAL:");
+      Serial.println(count_regulator);
+      Serial.print("Brig VAL:");
+      Serial.println(curBrightness);
+      Serial.println(button_press_flag);
+     }
+     else
+     {
+      count_regulator=0;
+     }
+}
+}
+else
+{
+  button_press_flag =1;
+  if (count_regulator > 1 && count_regulator < HUMANPRESSDELAY/5) 
+    { 
+    if(count_regulator<=255)
+     {
+      //Serial.println(count_regulator);
+     }
+     else
+     {
+      count_regulator=0;
+     }
+    }
+}
+  if(!digitalRead(INPIN))
+  {
     ++count; // one count is 50ms
-  } else {
-    if (count > 1 && count < HUMANPRESSDELAY/5) { //push between 50 ms and 1 sec      
+    
+  } 
+  else 
+  {
+    if (count > 1 && count < HUMANPRESSDELAY/5) 
+    {
+      //push between 50 ms and 1 sec      
       Serial.print("button pressed "); 
       Serial.print(count*0.05); 
       Serial.println(" Sec."); 
@@ -222,11 +282,14 @@ void btn_handle()
       Serial.println(!digitalRead(OUTPIN_SSR));
       digitalWrite(OUTPIN_SSR, !digitalRead(OUTPIN_SSR)); 
       state = digitalRead(OUTPIN_SSR);
-      if(iotMode==1 && mqttClient.connected()){
+      if(iotMode==1 && mqttClient.connected())
+      {
         toPub=1;        
         Debugln("DEBUG: toPub set to 1");
       }
-    } else if (count > (RESTARTDELAY/0.05) && count <= (RESETDELAY/0.05)){ //pressed 3 secs (60*0.05s)
+    } else if (count > (RESTARTDELAY/0.05) && count <= (RESETDELAY/0.05))
+    { 
+      //pressed 3 secs (60*0.05s)
       Serial.print("button pressed "); 
       Serial.print(count*0.05); 
       Serial.println(" Sec. Restarting!"); 
